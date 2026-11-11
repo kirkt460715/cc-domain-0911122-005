@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.tar
+.coverage
+
+var/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+lab-generated/
