@@ -14,6 +14,13 @@ def read_json(filename):
     return loads(source.read_text(encoding='utf-8'))
 
 
+def read_warc(filename):
+    source = Path(filename)
+    if source.is_symlink() or not source.is_file() or source.stat().st_size > 1073741824:
+        fail('warc_source', 'WARC input must be a bounded local regular file')
+    return source.read_bytes()
+
+
 def replay(vault, fixture):
     if not isinstance(fixture, dict) or set(fixture) != {'synthetic', 'steps'} or fixture['synthetic'] is not True:
         fail('fixture', 'Replay requires explicitly synthetic local fixture')
@@ -59,6 +66,24 @@ def parser():
     imports = commands.add_parser('archive-import-objects')
     imports.add_argument('source')
     imports.add_argument('actor')
+    warc_ingest = commands.add_parser('warc-ingest')
+    warc_ingest.add_argument('ingest_id')
+    warc_ingest.add_argument('source')
+    warc_ingest.add_argument('actor')
+    warc_ingest.add_argument('--max-total', type=int, default=67108864)
+    warc_ingest.add_argument('--max-record', type=int, default=16777216)
+    warc_resolve = commands.add_parser('warc-resolve')
+    warc_resolve.add_argument('ingest_id')
+    warc_resolve.add_argument('actor')
+    warc_mount = commands.add_parser('warc-mount')
+    warc_mount.add_argument('ingest_id')
+    warc_mount.add_argument('case_id')
+    warc_mount.add_argument('expected_revision', type=int)
+    warc_mount.add_argument('actor')
+    warc_get = commands.add_parser('warc-get')
+    warc_get.add_argument('ingest_id')
+    warc_describe = commands.add_parser('warc-describe')
+    warc_describe.add_argument('record_id')
     return result
 
 
@@ -80,6 +105,18 @@ def main(argv=None):
                 result = archive.verify(archive.read_file(options.source))
             elif options.command == 'archive-import-objects':
                 result = archive.import_objects(vault.db, archive.read_file(options.source), options.actor)
+            elif options.command == 'warc-ingest':
+                result = vault.webarchives.ingest(options.ingest_id, Path(options.source).name,
+                                                  read_warc(options.source), options.actor,
+                                                  max_total=options.max_total, max_record=options.max_record)
+            elif options.command == 'warc-resolve':
+                result = vault.webarchives.resolve(options.ingest_id, options.actor)
+            elif options.command == 'warc-mount':
+                result = vault.webarchives.mount(options.ingest_id, options.case_id, options.expected_revision, options.actor)
+            elif options.command == 'warc-get':
+                result = vault.webarchives.get(options.ingest_id)
+            elif options.command == 'warc-describe':
+                result = vault.webarchives.describe_capture(options.record_id)
             else:
                 result = replay(vault, read_json(options.fixture))
             print(canonical(result))

@@ -1,6 +1,6 @@
 import subprocess,sys,time
 start=time.monotonic()
-steps=[['python3','-m','unittest','discover','-s','tests','-v'],['python3','-m','compileall','-q','sealvault','lab','tests'],['python3', '-m', 'sealvault', 'replay', 'fixtures/sealing.json'],['python3','-m','lab.demo']]
+steps=[['python3','-m','unittest','discover','-s','tests','-v'],['python3','-m','compileall','-q','sealvault','lab','tests'],['python3', '-m', 'sealvault', 'replay', 'fixtures/sealing.json'],['python3','-m','lab.demo'],['python3','-m','lab.warc_demo']]
 for command in steps:
     print('运行:', ' '.join(command),flush=True)
     result=subprocess.run(command,timeout=75)
